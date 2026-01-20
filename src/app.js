@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import adminBlogRoutes from "./routes/adminBlog.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import dietRoutes from "./routes/diet.routes.js";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -25,6 +26,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/admin", dashboardRoutes);
 
+app.use("/api/diet", dietRoutes);
 app.use("/api/admin/blog", adminBlogRoutes);
 
 export default app;
