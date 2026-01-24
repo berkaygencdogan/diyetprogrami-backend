@@ -7,6 +7,11 @@ import uploadRoutes from "./routes/upload.routes.js";
 import adminBlogRoutes from "./routes/adminBlog.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import dietRoutes from "./routes/diet.routes.js";
+import categoryRoutes from "./routes/category.routes.js";
+import sliderRoutes from "./routes/slider.routes.js";
+import adminUsersRoutes from "./routes/admin.users.routes.js";
+import programRoutes from "./routes/program.routes.js";
+import favoriteRoutes from "./routes/favorite.routes.js";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -19,14 +24,18 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(cors());
 app.use(express.json());
+
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/blog", blogRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/admin", dashboardRoutes);
-
+app.use("/api/admin", adminUsersRoutes);
+app.use("/api/sliders", sliderRoutes);
+app.use("/api/categories", categoryRoutes);
 app.use("/api/diet", dietRoutes);
 app.use("/api/admin/blog", adminBlogRoutes);
-
+app.use("/api/program", programRoutes);
+app.use("/api/favorites", favoriteRoutes);
 export default app;

@@ -4,15 +4,22 @@ import {
   getApprovedComments,
   getAllCommentsAdmin,
   updateCommentAdmin,
+  getHomeComments,
+  toggleHomeComment,
 } from "../controllers/comment.controller.js";
-import { auth } from "../middlewares/auth.js";
+import { auth, requireAuth, requireRole } from "../middlewares/auth.js";
 import { allowRoles } from "../middlewares/role.js";
 
 const router = express.Router();
 
+// ✅ PUBLIC – HOME YORUMLARI (EN ÜSTE)
+router.get("/home", getHomeComments);
+
 // Public
-router.get("/:blogId", getApprovedComments);
 router.post("/", createComment);
+
+// ⚠️ PARAMETRELİ ROUTE EN ALTA
+router.get("/:blogId", getApprovedComments);
 
 // Admin / Editor
 router.get(
@@ -27,6 +34,14 @@ router.put(
   auth,
   allowRoles("editor", "admin"),
   updateCommentAdmin,
+);
+
+// Admin – home toggle
+router.patch(
+  "/:id/home",
+  requireAuth,
+  requireRole(["admin"]),
+  toggleHomeComment,
 );
 
 export default router;

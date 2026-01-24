@@ -82,3 +82,35 @@ export const getCommentsByBlog = async (req, res) => {
 
   res.json(rows);
 };
+
+// ADMIN – home toggle
+export const toggleHomeComment = async (req, res, next) => {
+  try {
+    await pool.query("UPDATE comments SET home = ? WHERE id = ?", [
+      req.body.home,
+      req.params.id,
+    ]);
+
+    res.json({ success: true });
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getHomeComments = async (req, res, next) => {
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT id, name, content, created_at
+      FROM comments
+      WHERE home = 1
+      ORDER BY created_at DESC
+      `,
+    );
+
+    res.set("Cache-Control", "no-store");
+    res.json(rows);
+  } catch (e) {
+    next(e);
+  }
+};
