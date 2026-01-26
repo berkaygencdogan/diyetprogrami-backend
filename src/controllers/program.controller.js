@@ -1,70 +1,83 @@
 import { pool } from "../config/db.js";
 
-/* 🎯 HEDEF KAYDET */
-export const saveGoal = async (req, res, next) => {
-  try {
-    const { goal, target_weight, months, summary } = req.body;
+export const createProgram = async (req, res) => {
+  const userId = req.user.id;
+  const { summary, plan } = req.body;
 
-    await pool.query(
-      `
-      INSERT INTO user_goals
-      (user_id, goal, target_weight, months, daily_calories, protein, fat, carb)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        req.user.id,
-        goal,
-        target_weight || null,
-        months || null,
-        summary.dailyCalories,
-        summary.macros.protein,
-        summary.macros.fat,
-        summary.macros.carb,
-      ],
-    );
-
-    res.json({ success: true });
-  } catch (e) {
-    next(e);
+  if (!summary || !plan) {
+    return res.status(400).json({ error: "Eksik program verisi" });
   }
+
+  const [result] = await pool.query(
+    `
+    INSERT INTO programs (user_id, goal, start_weight, target_weight, months, summary, plan)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      userId,
+      summary.goal,
+      summary.startWeight || null,
+      summary.targetKg || null,
+      summary.months || null,
+      JSON.stringify(summary),
+      JSON.stringify(plan),
+    ],
+  );
+
+  res.json({ id: result.insertId });
 };
 
-/* 📊 PROGRAMIM */
-export const getMyProgram = async (req, res, next) => {
-  try {
-    const [rows] = await pool.query(
-      `
-      SELECT *
-      FROM user_goals
-      WHERE user_id = ?
-      ORDER BY created_at DESC
-      LIMIT 1
-      `,
-      [req.user.id],
-    );
+export const getMyPrograms = async (req, res) => {
+  const userId = req.user.id;
 
-    res.json(rows[0] || null);
-  } catch (e) {
-    next(e);
-  }
+  const [rows] = await pool.query(
+    `
+    SELECT id, goal, created_at
+    FROM programs
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    `,
+    [userId],
+  );
+
+  res.json(rows);
 };
 
-/* 📏 ÖLÇÜM KAYDET */
-export const saveMeasurement = async (req, res, next) => {
-  try {
-    const { height, weight, age, gender } = req.body;
+export const getProgramById = async (req, res) => {
+  const userId = req.user.id;
+  const { id } = req.params;
 
-    await pool.query(
-      `
-      INSERT INTO user_measurements
-      (user_id, height, weight, age, gender)
-      VALUES (?, ?, ?, ?, ?)
-      `,
-      [req.user.id, height, weight, age, gender],
-    );
+  const [rows] = await pool.query(
+    `
+    SELECT *
+    FROM programs
+    WHERE id = ? AND user_id = ?
+    `,
+    [id, userId],
+  );
 
-    res.json({ success: true });
-  } catch (e) {
-    next(e);
+  if (!rows.length) {
+    return res.status(404).json({ error: "Program bulunamadı" });
   }
+
+  const program = rows[0];
+  program.summary = JSON.parse(program.summary);
+  program.plan = JSON.parse(program.plan);
+
+  res.json(program);
+};
+
+export const deleteProgram = async (req, res) => {
+  const userId = req.user.id;
+  const { id } = req.params;
+
+  await pool.query(
+    `
+    DELETE FROM programs
+    WHERE id = ? AND user_id = ?
+    `,
+    [id, userId],
+  );
+
+  res.json({ success: true });
 };

@@ -1,15 +1,24 @@
 import express from "express";
-import { requireAuth } from "../middlewares/auth.js";
 import {
-  saveGoal,
-  getMyProgram,
-  saveMeasurement,
+  createProgram,
+  getMyPrograms,
+  getProgramById,
+  deleteProgram,
 } from "../controllers/program.controller.js";
+import { requireAuth } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-router.post("/goal", requireAuth, saveGoal);
-router.get("/me", requireAuth, getMyProgram);
-router.post("/measure", requireAuth, saveMeasurement);
+// oluştur
+router.post("/", requireAuth, createProgram);
+
+// liste
+router.get("/me", requireAuth, getMyPrograms);
+
+// detay
+router.get("/:id", requireAuth, getProgramById);
+
+// sil
+router.delete("/:id", requireAuth, deleteProgram);
 
 export default router;

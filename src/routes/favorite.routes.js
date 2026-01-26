@@ -8,6 +8,6 @@ import {
 const router = express.Router();
 
 router.post("/:blogId", requireAuth, toggleFavorite);
-router.get("/", requireAuth, getFavorites);
+router.get("/me", requireAuth, getFavorites);
 
 export default router;

@@ -12,6 +12,7 @@ import {
   incrementBlogViews,
   getPopularBlogs,
   getRecommendedBlogs,
+  getRelatedBlogsByTags,
 } from "../controllers/blog.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { allowRoles } from "../middlewares/role.js";
@@ -25,6 +26,7 @@ router.get("/popular", getPopularBlogs);
 router.post("/:id/view", incrementBlogViews);
 router.get("/recommended", getRecommendedBlogs);
 router.get("/latest", getLatestBlogs);
+router.get("/related/:id", getRelatedBlogsByTags);
 router.get("/:slug", getBlogBySlug);
 
 // Admin / Editor

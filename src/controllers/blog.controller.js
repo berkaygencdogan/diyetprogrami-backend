@@ -264,3 +264,23 @@ export const getRecommendedBlogs = async (req, res) => {
 
   res.json(rows);
 };
+
+export const getRelatedBlogsByTags = async (req, res) => {
+  const blogId = req.params.id;
+
+  const [rows] = await pool.query(
+    `
+    SELECT DISTINCT b.id, b.title, b.slug
+    FROM blog_tags bt
+    JOIN blog_tags bt2 ON bt.tag_id = bt2.tag_id
+    JOIN blogs b ON b.id = bt2.blog_id
+    WHERE bt.blog_id = ?
+      AND b.id != ?
+      AND b.status = 'published'
+    LIMIT 5
+    `,
+    [blogId, blogId],
+  );
+
+  res.json(rows);
+};
