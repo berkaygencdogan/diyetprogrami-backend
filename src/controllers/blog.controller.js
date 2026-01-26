@@ -17,42 +17,29 @@ export const getBlogs = async (req, res, next) => {
 
 export const getBlogBySlug = async (req, res) => {
   const { slug } = req.params;
+  const userId = req.user?.id || null;
 
-  // 1️⃣ BLOGU GETİR
   const [rows] = await pool.query(
     `
     SELECT 
-      b.id,
-      b.title,
-      b.slug,
-      b.content,
-      b.cover_image,
-      b.views,
-      u.name AS author_name
+      b.*,
+      u.name AS author_name,
+      IF(f.blog_id IS NULL, 0, 1) AS is_favorite
     FROM blogs b
     JOIN users u ON u.id = b.author_id
-    WHERE b.slug = ? AND b.status = 'published'
+    LEFT JOIN favorite_blogs f
+      ON f.blog_id = b.id AND f.user_id = ?
+    WHERE b.slug = ?
     LIMIT 1
     `,
-    [slug],
+    [userId, slug],
   );
 
   if (!rows.length) {
     return res.status(404).json({ error: "Blog bulunamadı" });
   }
 
-  const blog = rows[0];
-
-  // 2️⃣ OKUNMA SAYISINI ARTIR
-  await pool.query(`UPDATE blogs SET views = views + 1 WHERE id = ?`, [
-    blog.id,
-  ]);
-
-  // 3️⃣ RESPONSE
-  return res.json({
-    ...blog,
-    views: blog.views + 1, // frontend doğru görsün diye
-  });
+  res.json(rows[0]);
 };
 
 // Admin

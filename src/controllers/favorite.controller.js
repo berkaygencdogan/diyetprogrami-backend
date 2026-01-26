@@ -38,3 +38,20 @@ export const getFavorites = async (req, res) => {
 
   res.json(rows);
 };
+
+export const checkFavorite = async (req, res) => {
+  const userId = req.user.id;
+  const { blogId } = req.params;
+
+  const [rows] = await pool.query(
+    `
+    SELECT 1 
+    FROM favorite_blogs
+    WHERE user_id = ? AND blog_id = ?
+    LIMIT 1
+    `,
+    [userId, blogId],
+  );
+
+  res.json({ isFavorite: rows.length > 0 });
+};
