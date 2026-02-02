@@ -12,16 +12,10 @@ import { allowRoles } from "../middlewares/role.js";
 
 const router = express.Router();
 
-// ✅ PUBLIC – HOME YORUMLARI (EN ÜSTE)
 router.get("/home", getHomeComments);
 
-// Public
 router.post("/", createComment);
 
-// ⚠️ PARAMETRELİ ROUTE EN ALTA
-router.get("/:blogId", getApprovedComments);
-
-// Admin / Editor
 router.get(
   "/admin/all",
   auth,
@@ -36,12 +30,13 @@ router.put(
   updateCommentAdmin,
 );
 
-// Admin – home toggle
 router.patch(
-  "/:id/home",
+  "/admin/:id/home",
   requireAuth,
   requireRole(["admin"]),
   toggleHomeComment,
 );
+
+router.get("/:blogId", getApprovedComments);
 
 export default router;

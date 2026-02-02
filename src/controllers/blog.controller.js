@@ -58,19 +58,24 @@ export const getBlogsAdmin = async (req, res, next) => {
 
 export const createBlog = async (req, res, next) => {
   try {
-    const { title, content, cover_image, category_id } = req.body;
+    const { title, content, cover_image, category_id, tags = [] } = req.body;
 
-    const slug = slugify(title, {
-      lower: true,
-      strict: true,
-      locale: "tr",
-    });
+    const slug = slugify(title, { lower: true, strict: true, locale: "tr" });
 
-    await pool.query(
+    const [result] = await pool.query(
       `INSERT INTO blogs (title, slug, content, cover_image, category_id, author_id)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [title, slug, content, cover_image, category_id, req.user.id],
     );
+
+    const blogId = result.insertId;
+
+    if (tags.length) {
+      const values = tags.map((tagId) => [blogId, tagId]);
+      await pool.query(`INSERT INTO blog_tags (blog_id, tag_id) VALUES ?`, [
+        values,
+      ]);
+    }
 
     res.json({ success: true });
   } catch (e) {
@@ -80,16 +85,25 @@ export const createBlog = async (req, res, next) => {
 
 export const updateBlog = async (req, res, next) => {
   try {
-    const { title, content, cover_image, category_id } = req.body;
-
+    const { title, content, cover_image, category_id, tags = [] } = req.body;
+    const blogId = req.params.id;
     await pool.query(
       `
       UPDATE blogs
       SET title = ?, content = ?, cover_image = ?, category_id = ?
       WHERE id = ?
       `,
-      [title, content, cover_image, category_id, req.params.id],
+      [title, content, cover_image, category_id, blogId],
     );
+
+    await pool.query(`DELETE FROM blog_tags WHERE blog_id = ?`, [blogId]);
+
+    if (tags.length) {
+      const values = tags.map((tagId) => [blogId, tagId]);
+      await pool.query(`INSERT INTO blog_tags (blog_id, tag_id) VALUES ?`, [
+        values,
+      ]);
+    }
 
     res.json({ success: true });
   } catch (e) {
@@ -99,16 +113,31 @@ export const updateBlog = async (req, res, next) => {
 
 export const getBlogByIdAdmin = async (req, res, next) => {
   try {
-    const [rows] = await pool.query(
-      `
-      SELECT id, title, content, cover_image, category_id
-      FROM blogs
-      WHERE id = ? LIMIT 1
-      `,
-      [req.params.id],
+    const blogId = req.params.id;
+
+    const [[blog]] = await pool.query(
+      `SELECT * FROM blogs WHERE id = ? LIMIT 1`,
+      [blogId],
     );
 
-    res.json(rows[0]);
+    if (!blog) {
+      return res.status(404).json({ error: "Blog bulunamadı" });
+    }
+
+    const [tags] = await pool.query(
+      `
+      SELECT t.id, t.name
+      FROM blog_tags bt
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE bt.blog_id = ?
+      `,
+      [blogId],
+    );
+
+    res.json({
+      ...blog,
+      tags, // ⬅️ BU KRİTİK
+    });
   } catch (e) {
     next(e);
   }
@@ -118,6 +147,17 @@ export const getBlogsByCategory = async (req, res, next) => {
   try {
     const { slug } = req.params;
 
+    // 1️⃣ KATEGORİYİ BUL
+    const [[category]] = await pool.query(
+      `SELECT id FROM categories WHERE slug = ? LIMIT 1`,
+      [slug],
+    );
+
+    if (!category) {
+      return res.json([]);
+    }
+
+    // 2️⃣ O KATEGORİ + ALT KATEGORİLERİ
     const [rows] = await pool.query(
       `
       SELECT 
@@ -127,24 +167,20 @@ export const getBlogsByCategory = async (req, res, next) => {
         b.cover_image,
         b.created_at,
         c.name AS category_name,
-        c.slug AS category_slug,
-        parent.name AS parent_name,
-        parent.slug AS parent_slug
+        c.slug AS category_slug
       FROM blogs b
       JOIN categories c ON c.id = b.category_id
-      LEFT JOIN categories parent ON parent.id = c.parent_id
       WHERE 
         (
-          c.slug = ?              -- direkt kategori (beslenme, saglikli-yasam)
-          OR parent.slug = ?       -- alt kategori (diyet)
+          c.id = ?
+          OR c.parent_id = ?
         )
         AND b.status = 'published'
       ORDER BY b.created_at DESC
       `,
-      [slug, slug],
+      [category.id, category.id],
     );
 
-    res.set("Cache-Control", "no-store");
     res.json(rows);
   } catch (e) {
     next(e);
