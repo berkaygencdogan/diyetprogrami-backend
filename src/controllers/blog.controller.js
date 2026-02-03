@@ -197,14 +197,21 @@ export const getLatestBlogs = async (req, res, next) => {
         b.slug,
         b.cover_image,
         b.created_at,
+
+        c.id   AS category_id,
         c.name AS category_name,
-        parent.name AS parent_name
+        c.color AS category_color,
+
+        parent.id   AS parent_id,
+        parent.name AS parent_name,
+        parent.color AS parent_color
+
       FROM blogs b
       JOIN categories c ON c.id = b.category_id
       LEFT JOIN categories parent ON parent.id = c.parent_id
       WHERE b.status = 'published'
       ORDER BY b.created_at DESC
-      LIMIT 10
+      LIMIT 5
       `,
     );
 
