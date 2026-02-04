@@ -14,6 +14,8 @@ import programRoutes from "./routes/program.routes.js";
 import favoriteRoutes from "./routes/favorite.routes.js";
 import reactionRoutes from "./routes/reaction.route.js";
 import tagRoutes from "./routes/tag.routes.js";
+import settingsRoutes from "./routes/settings.routes.js";
+import seoRoutes from "./routes/seo.routes.js";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -42,5 +44,8 @@ app.use("/api/admin/blog", adminBlogRoutes);
 app.use("/api/programs", programRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/reactions", reactionRoutes);
+app.use("/api/settings", settingsRoutes);
 app.use("/api/tags", tagRoutes);
+app.use("/api/seo", seoRoutes);
+
 export default app;

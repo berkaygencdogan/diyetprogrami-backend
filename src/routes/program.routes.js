@@ -4,21 +4,23 @@ import {
   getMyPrograms,
   getProgramById,
   deleteProgram,
+  attachGuestPrograms,
 } from "../controllers/program.controller.js";
+import { optionalAuth } from "../middlewares/optionalAuth.js";
 import { requireAuth } from "../middlewares/auth.js";
+import { checkProgramAccess } from "../middlewares/checkProgramAccess.js";
 
 const router = express.Router();
 
-// oluştur
-router.post("/", requireAuth, createProgram);
+router.get("/", optionalAuth, checkProgramAccess, getMyPrograms);
 
-// liste
-router.get("/me", requireAuth, getMyPrograms);
+router.get("/:id", optionalAuth, checkProgramAccess, getProgramById);
 
-// detay
-router.get("/:id", requireAuth, getProgramById);
+router.post("/", optionalAuth, checkProgramAccess, createProgram);
+
+router.post("/attach-guest", requireAuth, attachGuestPrograms);
 
 // sil
-router.delete("/:id", requireAuth, deleteProgram);
+router.delete("/:id", optionalAuth, deleteProgram);
 
 export default router;
