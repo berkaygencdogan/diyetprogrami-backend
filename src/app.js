@@ -16,6 +16,8 @@ import reactionRoutes from "./routes/reaction.route.js";
 import tagRoutes from "./routes/tag.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
 import seoRoutes from "./routes/seo.routes.js";
+import adsRoutes from "./routes/adSlot.routes.js";
+import adminAdsRoutes from "./routes/adminAds.routes.js";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -47,5 +49,7 @@ app.use("/api/reactions", reactionRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/tags", tagRoutes);
 app.use("/api/seo", seoRoutes);
+app.use("/api/ads", adsRoutes);
+app.use("/api/admin/ads", adminAdsRoutes);
 
 export default app;
