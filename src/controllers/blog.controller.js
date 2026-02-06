@@ -5,9 +5,23 @@ import slugify from "slugify";
 export const getBlogs = async (req, res, next) => {
   try {
     const [rows] = await pool.query(
-      `SELECT id, title, slug, content, cover_image, created_at
-       FROM blogs
-       ORDER BY created_at DESC`,
+      `SELECT
+  b.id,
+  b.title,
+  b.slug,
+  b.content,
+  b.cover_image,
+  b.created_at,
+
+  c.id   AS category_id,
+  c.name AS category_name,
+  c.color AS category_color
+
+FROM blogs b
+LEFT JOIN categories c ON c.id = b.category_id
+WHERE b.status = 'published'
+ORDER BY b.created_at DESC
+`,
     );
     res.json(rows);
   } catch (e) {
@@ -165,6 +179,7 @@ export const getBlogsByCategory = async (req, res, next) => {
         b.title,
         b.slug,
         b.cover_image,
+        b.views,
         b.created_at,
         c.name AS category_name,
         c.slug AS category_slug
@@ -197,7 +212,7 @@ export const getLatestBlogs = async (req, res, next) => {
         b.slug,
         b.cover_image,
         b.created_at,
-
+        b.views,
         c.id   AS category_id,
         c.name AS category_name,
         c.color AS category_color,
@@ -232,15 +247,25 @@ export const searchBlogs = async (req, res, next) => {
 
     const [rows] = await pool.query(
       `
-      SELECT id, title, slug, cover_image, created_at
-      FROM blogs
-      WHERE status = 'published'
-      AND (
-        title LIKE ? OR
-        content LIKE ?
-      )
-      ORDER BY created_at DESC
-      LIMIT 20
+      SELECT
+  b.id,
+  b.title,
+  b.slug,
+  b.cover_image,
+  b.created_at,
+
+  c.name AS category_name,
+  c.color AS category_color
+
+FROM blogs b
+LEFT JOIN categories c ON c.id = b.category_id
+WHERE b.status = 'published'
+AND (
+  b.title LIKE ? OR
+  b.content LIKE ?
+)
+ORDER BY b.created_at DESC
+LIMIT 20
       `,
       [`%${q}%`, `%${q}%`],
     );
@@ -265,11 +290,22 @@ export const incrementBlogViews = async (req, res, next) => {
 export const getPopularBlogs = async (req, res) => {
   const [rows] = await pool.query(
     `
-    SELECT id, title, slug, cover_image, views
-    FROM blogs
-    WHERE status = 'published'
-    ORDER BY views DESC
-    LIMIT 5
+    SELECT
+  b.id,
+  b.title,
+  b.slug,
+  b.cover_image,
+  b.views,
+
+  c.name AS category_name,
+  c.color AS category_color
+
+FROM blogs b
+LEFT JOIN categories c ON c.id = b.category_id
+WHERE b.status = 'published'
+ORDER BY b.views DESC
+LIMIT 5
+
     `,
   );
   res.json(rows);
@@ -280,14 +316,25 @@ export const getRecommendedBlogs = async (req, res) => {
 
   const [rows] = await pool.query(
     `
-    SELECT DISTINCT b.id, b.title, b.slug, b.cover_image, b.views
-    FROM blogs b
-    JOIN blog_tags bt ON bt.blog_id = b.id
-    JOIN tags t ON t.id = bt.tag_id
-    WHERE t.slug = ?
-      AND b.status = 'published'
-    ORDER BY b.views DESC
-    LIMIT 5
+    SELECT DISTINCT
+  b.id,
+  b.title,
+  b.slug,
+  b.cover_image,
+  b.views,
+
+  c.name AS category_name,
+  c.color AS category_color
+
+FROM blogs b
+JOIN blog_tags bt ON bt.blog_id = b.id
+JOIN tags t ON t.id = bt.tag_id
+LEFT JOIN categories c ON c.id = b.category_id
+WHERE t.slug = ?
+  AND b.status = 'published'
+ORDER BY b.views DESC
+LIMIT 5
+
     `,
     [goal],
   );

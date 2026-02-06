@@ -26,13 +26,29 @@ export const createComment = async (req, res) => {
     return res.status(400).json({ error: "Yorum boş olamaz" });
   }
 
+  let finalBlogId = blog_id;
+
+  // 🔁 Eğer bu bir yanıt ise, blog_id'yi parent yorumdan al
+  if (parent_id) {
+    const [[parent]] = await pool.query(
+      "SELECT blog_id FROM comments WHERE id = ?",
+      [parent_id],
+    );
+
+    if (!parent) {
+      return res.status(400).json({ error: "Yanıtlanan yorum bulunamadı" });
+    }
+
+    finalBlogId = parent.blog_id;
+  }
+
   await pool.query(
     `
     INSERT INTO comments 
     (blog_id, parent_id, name, email, content, status, home)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, 'pending', 0)
     `,
-    [blog_id, parent_id || null, name || null, email, content, "pending", 0],
+    [finalBlogId, parent_id || null, name || null, email, content],
   );
 
   res.json({
@@ -72,17 +88,18 @@ export const getAllCommentsAdmin = async (req, res, next) => {
 
 export const updateCommentAdmin = async (req, res) => {
   const { id } = req.params;
-  const { status, home } = req.body;
+  const { status, home, content } = req.body;
 
   await pool.query(
     `
     UPDATE comments
     SET
-      status = COALESCE(?, status),
-      home = COALESCE(?, home)
+      content = COALESCE(?, content),
+      status  = COALESCE(?, status),
+      home    = COALESCE(?, home)
     WHERE id = ?
     `,
-    [status, home, id],
+    [content, status, home, id],
   );
 
   res.json({ success: true });
