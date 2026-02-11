@@ -29,7 +29,7 @@ router.post(
       const outputFilename = crypto.randomUUID() + ".webp";
       const outputPath = path.join(outputDir, outputFilename);
 
-      await execFileAsync("magick", [
+      await execFileAsync("convert", [
         inputPath,
         "-resize",
         "1600x>", // width max 1600, büyütme yok
