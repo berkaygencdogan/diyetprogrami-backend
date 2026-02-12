@@ -33,7 +33,7 @@ export const getBlogBySlug = async (req, res) => {
   const { slug } = req.params;
   const userId = req.user?.id || null;
 
-  const [rows] = await pool.query(
+  const [[blog]] = await pool.query(
     `
     SELECT 
       b.*,
@@ -49,11 +49,26 @@ export const getBlogBySlug = async (req, res) => {
     [userId, slug],
   );
 
-  if (!rows.length) {
+  if (!blog) {
     return res.status(404).json({ error: "Blog bulunamadı" });
   }
 
-  res.json(rows[0]);
+  /* 🔥 TAGLERİ ÇEK */
+  const [tags] = await pool.query(
+    `
+    SELECT t.id, t.name, t.slug
+    FROM blog_tags bt
+    JOIN tags t ON t.id = bt.tag_id
+    WHERE bt.blog_id = ?
+    `,
+    [blog.id],
+  );
+
+  /* 🔥 RESPONSE’A EKLE */
+  res.json({
+    ...blog,
+    tags,
+  });
 };
 
 // Admin

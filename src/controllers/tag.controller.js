@@ -29,3 +29,36 @@ export const createTag = async (req, res) => {
 
   res.json({ id: result.insertId, name, slug });
 };
+
+export const getBlogsByTag = async (req, res) => {
+  const { slug } = req.params;
+
+  const [rows] = await pool.query(
+    `
+    SELECT b.*
+    FROM blogs b
+    JOIN blog_tags bt ON bt.blog_id = b.id
+    JOIN tags t ON t.id = bt.tag_id
+    WHERE t.slug = ?
+    ORDER BY b.created_at DESC
+    `,
+    [slug],
+  );
+
+  res.json(rows);
+};
+
+export const getTagBySlug = async (req, res) => {
+  const { slug } = req.params;
+
+  const [rows] = await pool.query(
+    `SELECT id, name, slug FROM tags WHERE slug = ? LIMIT 1`,
+    [slug],
+  );
+
+  if (!rows.length) {
+    return res.status(404).json({ message: "Tag bulunamadı" });
+  }
+
+  res.json(rows[0]);
+};
